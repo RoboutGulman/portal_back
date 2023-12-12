@@ -125,11 +125,11 @@ func (r repository) GetRootCompanyDepartments(ctx context.Context, companyId int
 		SELECT department.id, department.name, department.supervisorid, employeeaccount.firstname
 		FROM department
 		LEFT JOIN employeeaccount ON department.supervisorid = employeeaccount.id
-		WHERE department.companyid = $1 AND department.parentdepartmentid = NULL
+		WHERE department.companyid = $1 AND department.parentdepartmentid IS NULL
 	`
 
 	var rootCompanyDepartments []domain.Department
-	rows, err := r.conn.Query(ctx, query)
+	rows, err := r.conn.Query(ctx, query, companyId)
 	if err == pgx.ErrNoRows {
 		return rootCompanyDepartments, department.DepartmentEmployeesNotFound
 	} else if err != nil {
