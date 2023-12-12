@@ -20,17 +20,11 @@ func (r employeeAccountRepository) CreateEmployee(ctx context.Context, dto domai
 		INSERT INTO employeeaccount
 		(firstname, secondname, surname,
 		telephonenumber, avatarurl, dateofbirth)
-		VALUES ($1.FirstName, $1.SecondName, $1.surname,
-				$1.TelephoneNumber, $1.Icon, $1.DateOfBirth)
+		VALUES ($1, $2, $3,	$4, $5, $6)
 	`
-	commandTag, err := r.conn.Exec(ctx, query, dto)
-	if err != nil {
-		return err
-	}
-	if commandTag.Insert() == false {
-		return err
-	}
-	return nil
+	rows, err := r.conn.Query(ctx, query, dto.FirstName, dto.SecondName, dto.Surname, dto.TelephoneNumber, dto.Icon, dto.DateOfBirth)
+	defer rows.Close()
+	return err
 }
 
 func (r employeeAccountRepository) GetEmployee(ctx context.Context, id int) (domain.EmployeeWithConnections, error) {
@@ -153,32 +147,21 @@ func (r employeeAccountRepository) DeleteEmployee(ctx context.Context, id int) e
 		DELETE FROM employeeaccount
 		WHERE id=$1
 	`
-	commandTag, err := r.conn.Exec(ctx, query, id)
-	if err != nil {
-		return err
-	}
-	if commandTag.RowsAffected() == 0 {
-		return err
-	}
-	return nil
+	rows, err := r.conn.Query(ctx, query, id)
+	defer rows.Close()
+	return err
 }
 
 func (r employeeAccountRepository) EditEmployee(ctx context.Context, id int, dto domain.EmployeeRequest) error {
 	query := `
 		UPDATE employeeaccount
-		SET firstname=$2.FirstName, secondname=$2.SecondName,
-			surname=$2.Surname, telephonenumber=$2.TelephoneNumber,
-			avatarurl=$2.Icon, dateofbirth=$2.DateOfBirth,
+		SET firstname=$2, secondname=$3, surname=$4,
+		    telephonenumber=$5, avatarurl=$6, dateofbirth=$7,
 		WHERE id=$1
 	`
-	commandTag, err := r.conn.Exec(ctx, query, id, dto)
-	if err != nil {
-		return err
-	}
-	if commandTag.Update() == false {
-		return err
-	}
-	return nil
+	rows, err := r.conn.Query(ctx, query, id, dto.FirstName, dto.SecondName, dto.Surname, dto.TelephoneNumber, dto.Icon, dto.DateOfBirth)
+	defer rows.Close()
+	return err
 }
 
 func (r employeeAccountRepository) MoveEmployeeToDepartment(ctx context.Context, employeeId int, departmentFromId int, departmentToId int) error {
@@ -187,14 +170,9 @@ func (r employeeAccountRepository) MoveEmployeeToDepartment(ctx context.Context,
 		SET departmentid=$3
 		WHERE accountid=$1 AND departmentid=$2
 	`
-	commandTag, err := r.conn.Exec(ctx, query, employeeId, departmentFromId, departmentToId)
-	if err != nil {
-		return err
-	}
-	if commandTag.Update() == false {
-		return err
-	}
-	return nil
+	rows, err := r.conn.Query(ctx, query, employeeId, departmentFromId, departmentToId)
+	defer rows.Close()
+	return err
 }
 
 func (r employeeAccountRepository) AddEmployeeToDepartment(ctx context.Context, employeeId int, departmentId int) error {
@@ -203,12 +181,7 @@ func (r employeeAccountRepository) AddEmployeeToDepartment(ctx context.Context, 
 		(accountid, departmentid)
 		VALUES ($1, $2)
 	`
-	commandTag, err := r.conn.Exec(ctx, query, employeeId, departmentId)
-	if err != nil {
-		return err
-	}
-	if commandTag.Insert() == false {
-		return err
-	}
-	return nil
+	rows, err := r.conn.Query(ctx, query, employeeId, departmentId)
+	defer rows.Close()
+	return err
 }
