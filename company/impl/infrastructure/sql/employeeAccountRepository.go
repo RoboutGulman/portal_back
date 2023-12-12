@@ -16,8 +16,21 @@ type employeeAccountRepository struct {
 }
 
 func (r employeeAccountRepository) CreateEmployee(ctx context.Context, dto domain.EmployeeRequest, userId int, companyId int) error {
-	//TODO implement me
-	panic("implement me")
+	query := `
+		INSERT INTO employeeaccount
+		(firstname, secondname, surname,
+		telephonenumber, avatarurl, dateofbirth)
+		VALUES ($1.FirstName, $1.SecondName, $1.surname,
+				$1.TelephoneNumber, $1.Icon, $1.DateOfBirth)
+	`
+	commandTag, err := r.conn.Exec(ctx, query, dto)
+	if err != nil {
+		return err
+	}
+	if commandTag.Insert() == false {
+		return err
+	}
+	return nil
 }
 
 func (r employeeAccountRepository) GetEmployee(ctx context.Context, id int) (domain.EmployeeWithConnections, error) {
@@ -136,12 +149,21 @@ func (r employeeAccountRepository) GetEmployeeByUserAndCompanyIds(ctx context.Co
 }
 
 func (r employeeAccountRepository) DeleteEmployee(ctx context.Context, id int) error {
-	//TODO implement me
-	panic("implement me")
+	query := `
+		DELETE FROM employeeaccount
+		WHERE id=$1
+	`
+	commandTag, err := r.conn.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	if commandTag.RowsAffected() == 0 {
+		return err
+	}
+	return nil
 }
 
 func (r employeeAccountRepository) EditEmployee(ctx context.Context, id int, dto domain.EmployeeRequest) error {
-	//TODO implement me
 	query := `
 		UPDATE employeeaccount
 		SET firstname=$2.FirstName, secondname=$2.SecondName,
@@ -149,7 +171,14 @@ func (r employeeAccountRepository) EditEmployee(ctx context.Context, id int, dto
 			avatarurl=$2.Icon, dateofbirth=$2.DateOfBirth,
 		WHERE id=$1
 	`
-	panic("implement me")
+	commandTag, err := r.conn.Exec(ctx, query, id, dto)
+	if err != nil {
+		return err
+	}
+	if commandTag.Update() == false {
+		return err
+	}
+	return nil
 }
 
 func (r employeeAccountRepository) MoveEmployeeToDepartment(ctx context.Context, employeeId int, departmentFromId int, departmentToId int) error {
