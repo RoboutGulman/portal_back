@@ -14,13 +14,13 @@ type repository struct {
 	conn *pgx.Conn
 }
 
-func (r *repository) GetSaltByLogin(ctx context.Context, login string) (string, error) {
+func (r *repository) GetSaltByEmail(ctx context.Context, email string) (string, error) {
 	query := `
 		SELECT salt FROM auth_user 
-        WHERE login=$1
+        WHERE email=$1
 	`
 	var salt string
-	err := r.conn.QueryRow(ctx, query, login).Scan(&salt)
+	err := r.conn.QueryRow(ctx, query, email).Scan(&salt)
 	if err == pgx.ErrNoRows {
 		return "", auth.ErrUserNotFound
 	} else if err != nil {
@@ -29,13 +29,13 @@ func (r *repository) GetSaltByLogin(ctx context.Context, login string) (string, 
 	return salt, nil
 }
 
-func (r *repository) GetPasswordByLogin(ctx context.Context, login string) (string, error) {
+func (r *repository) GetPasswordByEmail(ctx context.Context, email string) (string, error) {
 	query := `
 		SELECT password FROM auth_user 
-        WHERE login=$1
+        WHERE email=$1
 	`
 	var password string
-	err := r.conn.QueryRow(ctx, query, login).Scan(&password)
+	err := r.conn.QueryRow(ctx, query, email).Scan(&password)
 	if err == pgx.ErrNoRows {
 		return "", auth.ErrUserNotFound
 	} else if err != nil {
@@ -44,13 +44,13 @@ func (r *repository) GetPasswordByLogin(ctx context.Context, login string) (stri
 	return password, nil
 }
 
-func (r *repository) GetUserIDByLogin(ctx context.Context, login string) (int, error) {
+func (r *repository) GetUserIDByEmail(ctx context.Context, email string) (int, error) {
 	query := `
 		SELECT id FROM auth_user 
-        WHERE login=$1
+        WHERE email=$1
 	`
 	var userID int
-	err := r.conn.QueryRow(ctx, query, login).Scan(&userID)
+	err := r.conn.QueryRow(ctx, query, email).Scan(&userID)
 	if err == pgx.ErrNoRows {
 		return 0, auth.ErrUserNotFound
 	} else if err != nil {

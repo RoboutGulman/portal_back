@@ -3,17 +3,17 @@ info:
   title: Team tells generated
   version: 1.0.0
 paths:
-  /authorization/salt/{login}:
+  /authorization/salt/{email}:
     get:
-      description: get salt by login
+      description: get salt by email
       parameters:
-        - name: login
+        - name: email
           in: path
-          description: login of user
+          description: email of user
           required: true
           schema:
             type: string
-      operationId: GetSaltByLogin
+      operationId: GetSaltByEmail
       responses:
         '200':
           description: OK
@@ -40,7 +40,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/loginResponse'
         '404':
-          description: User with login and password not found
+          description: User with email and password not found
   /authorization/refresh-token:
     get:
       operationId: RefreshToken
@@ -69,7 +69,7 @@ components:
     loginRequest:
       type: object
       properties:
-        login:
+        email:
           type: string
         password:
           type: string
