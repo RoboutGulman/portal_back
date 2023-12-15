@@ -76,14 +76,14 @@ func (r repository) GetChildDepartments(ctx context.Context, id int) ([]domain.D
 		       department.supervisorid, employeeaccount.firstname
 		FROM department
 		LEFT JOIN employeeaccount ON department.supervisorid = employeeaccount.id
-		LEFT JOIN department AS parentDepartment ON department.parentdepartmentid = department.id
+		LEFT JOIN department AS parentDepartment ON department.parentdepartmentid = parentDepartment.id
 		WHERE department.parentdepartmentid = $1
 	`
 
 	var childDepartments []domain.Department
-	rows, err := r.conn.Query(ctx, query)
+	rows, err := r.conn.Query(ctx, query, id)
 	if err == pgx.ErrNoRows {
-		return childDepartments, department.DepartmentEmployeesNotFound
+		return childDepartments, department.EmployeesNotFound
 	} else if err != nil {
 		return childDepartments, err
 	}
@@ -91,6 +91,8 @@ func (r repository) GetChildDepartments(ctx context.Context, id int) ([]domain.D
 
 	for rows.Next() {
 		var childDepartment domain.Department
+		childDepartment.Supervisor = &domain.Supervisor{}
+		childDepartment.ParentDepartment = &domain.ParentDepartment{}
 		err := rows.Scan(&childDepartment.Id, &childDepartment.Name, &childDepartment.ParentDepartment.Id,
 			&childDepartment.ParentDepartment.Name, &childDepartment.Supervisor.Id, &childDepartment.Supervisor.Name)
 		if err != nil {
