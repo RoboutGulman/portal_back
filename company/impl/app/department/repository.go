@@ -11,4 +11,5 @@ type Repository interface {
 	GetDepartmentEmployees(ctx context.Context, departmentId int) ([]domain.Employee, error)
 	GetCountOfEmployees(ctx context.Context, departmentId int) (int, error)
 	GetCompanyDepartments(ctx context.Context, companyId int) ([]domain.Department, error)
+	CreateDepartment(ctx context.Context, request domain.DepartmentRequest, companyId int) error
 }

@@ -15,6 +15,17 @@ type repository struct {
 	conn *pgx.Conn
 }
 
+func (r repository) CreateDepartment(ctx context.Context, request domain.DepartmentRequest, companyId int) error {
+	query := `
+		INSERT INTO department
+		(name, parentdepartmentid, companyid, supervisorid)
+		VALUES ($1, $2, $3,	$4)
+	`
+
+	_, err := r.conn.Exec(ctx, query, request.Name, request.ParentDepartmentID, companyId, request.SupervisorID)
+	return err
+}
+
 func (r repository) GetDepartment(ctx context.Context, id int) (domain.Department, error) {
 	query := `
 		SELECT department.id, department.name, department.parentdepartmentid, parentDepartment.name, 

@@ -461,19 +461,12 @@ components:
       required:
         - name
         - employeeIDs
+        - supervisorID
       properties:
         name:
           type: string
-        supervisor:
-          type: object
-          required:
-            - id
-            - name
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
+        supervisorID:
+          type: integer
         parentDepartmentID:
           type: integer
         employeeIDs:

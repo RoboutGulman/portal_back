@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	openapi_types "github.com/oapi-codegen/runtime/types"
+	"io/ioutil"
 	"net/http"
 	authInteralapi "portal_back/authentication/api/internalapi"
 	"portal_back/company/api/frontend"
@@ -51,8 +52,27 @@ func (f frontendServer) GetDepartments(w http.ResponseWriter, r *http.Request) {
 }
 
 func (f frontendServer) CreateDepartment(w http.ResponseWriter, r *http.Request) {
-	//TODO implement me
-	panic("implement me")
+	network.Wrap(f.authRequestService, w, r, func(info network.RequestInfo) {
+		reqBody, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		var departmentReq frontendapi.DepartmentRequest
+		err = json.Unmarshal(reqBody, &departmentReq)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		err = f.departmentService.CreateDepartment(r.Context(), mapper.MapDepartmentRequest(departmentReq), info.CompanyId)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+	})
 }
 
 func (f frontendServer) GetDepartment(w http.ResponseWriter, r *http.Request, departmentId int) {

@@ -9,7 +9,7 @@ import (
 
 type Service interface {
 	GetDepartments(ctx context.Context, companyId int) ([]domain.DepartmentPreview, error)
-	CreateDepartment(ctx context.Context, dto domain.DepartmentRequest, requestInfo network.RequestInfo) error
+	CreateDepartment(ctx context.Context, dto domain.DepartmentRequest, companyId int) error
 	GetDepartment(ctx context.Context, id int) (domain.Department, error)
 	DeleteDepartment(ctx context.Context, id int, requestInfo network.RequestInfo) error
 	EditDepartment(ctx context.Context, id int, dto domain.DepartmentRequest, requestInfo network.RequestInfo) error
@@ -69,9 +69,8 @@ func (s *service) findChildren(ctx context.Context, department domain.Department
 	return nil
 }
 
-func (s *service) CreateDepartment(ctx context.Context, dto domain.DepartmentRequest, requestInfo network.RequestInfo) error {
-	//TODO implement me
-	panic("implement me")
+func (s *service) CreateDepartment(ctx context.Context, dto domain.DepartmentRequest, companyId int) error {
+	return s.repository.CreateDepartment(ctx, dto, companyId)
 }
 
 func (s *service) GetDepartment(ctx context.Context, id int) (domain.Department, error) {
