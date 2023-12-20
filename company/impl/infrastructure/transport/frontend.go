@@ -63,8 +63,26 @@ func (f frontendServer) CreateDepartment(w http.ResponseWriter, r *http.Request)
 }
 
 func (f frontendServer) GetDepartment(w http.ResponseWriter, r *http.Request, departmentId int) {
-	//TODO implement me
-	panic("implement me")
+	departmentWithEmployees, err := f.departmentService.GetDepartment(r.Context(), departmentId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := json.Marshal(mapper.MapDepartment(departmentWithEmployees))
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(resp)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 }
 
 func (f frontendServer) DeleteDepartment(w http.ResponseWriter, r *http.Request, departmentId int) {

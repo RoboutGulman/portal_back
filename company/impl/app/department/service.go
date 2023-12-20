@@ -10,7 +10,7 @@ import (
 type Service interface {
 	GetDepartments(ctx context.Context, companyId int) ([]domain.DepartmentPreview, error)
 	CreateDepartment(ctx context.Context, dto domain.DepartmentRequest, companyId int) error
-	GetDepartment(ctx context.Context, id int) (domain.Department, error)
+	GetDepartment(ctx context.Context, id int) (domain.DepartmentWithEmployees, error)
 	DeleteDepartment(ctx context.Context, id int, requestInfo network.RequestInfo) error
 	EditDepartment(ctx context.Context, id int, dto domain.DepartmentRequest, requestInfo network.RequestInfo) error
 	GetEmployees(ctx context.Context, companyId int) error
@@ -73,9 +73,56 @@ func (s *service) CreateDepartment(ctx context.Context, dto domain.DepartmentReq
 	return s.repository.CreateDepartment(ctx, dto, companyId)
 }
 
-func (s *service) GetDepartment(ctx context.Context, id int) (domain.Department, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *service) GetDepartment(ctx context.Context, id int) (domain.DepartmentWithEmployees, error) {
+	department, err := s.repository.GetDepartment(ctx, id)
+	if err != nil {
+		return domain.DepartmentWithEmployees{}, err
+	}
+	var arr []domain.DepartmentWithEmployees
+	employees, _ := s.repository.GetDepartmentEmployees(ctx, id)
+	result := domain.DepartmentWithEmployees{
+		Departments:      &arr,
+		Employees:        employees,
+		Id:               department.Id,
+		Name:             department.Name,
+		ParentDepartment: department.ParentDepartment,
+		Supervisor:       department.Supervisor,
+	}
+
+	err = s.findChildrenWithEmployees(ctx, result)
+	if err != nil {
+		return domain.DepartmentWithEmployees{}, err
+	}
+
+	return result, nil
+}
+
+func (s *service) findChildrenWithEmployees(ctx context.Context, department domain.DepartmentWithEmployees) error {
+	childDepartments, err := s.repository.GetChildDepartments(ctx, department.Id)
+	if err != nil {
+		return err
+	}
+	for _, dep := range childDepartments {
+		employees, _ := s.repository.GetDepartmentEmployees(ctx, dep.Id)
+		var arr []domain.DepartmentWithEmployees
+		normDep := domain.DepartmentWithEmployees{
+			Departments: &arr,
+			Employees:   employees,
+			Id:          dep.Id,
+			Name:        dep.Name,
+			ParentDepartment: &domain.ParentDepartment{
+				Id:   department.Id,
+				Name: department.Name,
+			},
+			Supervisor: dep.Supervisor,
+		}
+		*department.Departments = append(*department.Departments, normDep)
+		err := s.findChildrenWithEmployees(ctx, normDep)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *service) DeleteDepartment(ctx context.Context, id int, requestInfo network.RequestInfo) error {

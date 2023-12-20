@@ -37,13 +37,22 @@ func (r repository) GetDepartment(ctx context.Context, id int) (domain.Departmen
 	`
 
 	var departmentInfo domain.Department
+	departmentInfo.Supervisor = &domain.Supervisor{}
+	departmentInfo.ParentDepartment = &domain.ParentDepartment{}
 	err := r.conn.QueryRow(ctx, query, id).Scan(&departmentInfo.Id, &departmentInfo.Name, &departmentInfo.ParentDepartment.Id,
 		&departmentInfo.ParentDepartment.Name, &departmentInfo.Supervisor.Id, &departmentInfo.Supervisor.Name)
 	if err == pgx.ErrNoRows {
 		return departmentInfo, department.EmployeesNotFound
-	} else if err != nil {
-		return departmentInfo, err
 	}
+	if departmentInfo.Supervisor.Id == 0 {
+		departmentInfo.Supervisor = nil
+	}
+	if departmentInfo.ParentDepartment.Id == 0 {
+		departmentInfo.ParentDepartment = nil
+	}
+	//if err != nil {
+	//	return departmentInfo, err
+	//}
 
 	return departmentInfo, nil
 }

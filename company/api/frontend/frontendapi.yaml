@@ -397,6 +397,16 @@ components:
           type: integer
         name:
           type: string
+    supervisor:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
     departmentInfo:
       type: object
       required:
@@ -429,25 +439,9 @@ components:
         name:
           type: string
         supervisor:
-          type: object
-          required:
-            - id
-            - name
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
+          $ref: '#/components/schemas/supervisor'
         parentDepartment:
-          type: object
-          required:
-            - id
-            - name
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
+          $ref: '#/components/schemas/departmentInfo'
         employees:
           type: array
           items:
