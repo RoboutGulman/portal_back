@@ -11,12 +11,13 @@ type Service interface {
 	GetDepartments(ctx context.Context, companyId int) ([]domain.DepartmentPreview, error)
 	CreateDepartment(ctx context.Context, dto domain.DepartmentRequest, companyId int) error
 	GetDepartment(ctx context.Context, id int) (domain.DepartmentWithEmployees, error)
-	DeleteDepartment(ctx context.Context, id int, requestInfo network.RequestInfo) error
+	DeleteDepartment(ctx context.Context, id int) error
 	EditDepartment(ctx context.Context, id int, dto domain.DepartmentRequest, requestInfo network.RequestInfo) error
 	GetEmployees(ctx context.Context, companyId int) error
 }
 
 var EmployeesNotFound = errors.New("employees in this department not found")
+var DepartmentNotFound = errors.New("department not found")
 
 func NewService(repository Repository) Service {
 	return &service{repository: repository}
@@ -125,9 +126,12 @@ func (s *service) findChildrenWithEmployees(ctx context.Context, department doma
 	return nil
 }
 
-func (s *service) DeleteDepartment(ctx context.Context, id int, requestInfo network.RequestInfo) error {
-	//TODO implement me
-	panic("implement me")
+func (s *service) DeleteDepartment(ctx context.Context, id int) error {
+	_, err := s.repository.GetDepartment(ctx, id)
+	if err != nil {
+		return err
+	}
+	return s.repository.DeleteDepartment(ctx, id)
 }
 
 func (s *service) EditDepartment(ctx context.Context, id int, dto domain.DepartmentRequest, requestInfo network.RequestInfo) error {

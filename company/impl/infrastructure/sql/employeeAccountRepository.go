@@ -148,8 +148,7 @@ func (r employeeAccountRepository) DeleteEmployee(ctx context.Context, id int) e
 		DELETE FROM employeeaccount
 		WHERE id=$1
 	`
-	rows, err := r.conn.Query(ctx, query, id)
-	defer rows.Close()
+	_, err := r.conn.Exec(ctx, query, id)
 	return err
 }
 

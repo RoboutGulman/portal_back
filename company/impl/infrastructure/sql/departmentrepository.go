@@ -2,6 +2,7 @@ package sql
 
 import (
 	"context"
+	"database/sql"
 	"github.com/jackc/pgx/v5"
 	"portal_back/company/impl/app/department"
 	"portal_back/company/impl/domain"
@@ -13,6 +14,15 @@ func NewDepartmentRepository(conn *pgx.Conn) department.Repository {
 
 type repository struct {
 	conn *pgx.Conn
+}
+
+func (r repository) DeleteDepartment(ctx context.Context, id int) error {
+	query := `
+		DELETE FROM department
+		WHERE id=$1
+	`
+	_, err := r.conn.Exec(ctx, query, id)
+	return err
 }
 
 func (r repository) CreateDepartment(ctx context.Context, request domain.DepartmentRequest, companyId int) error {
@@ -37,22 +47,30 @@ func (r repository) GetDepartment(ctx context.Context, id int) (domain.Departmen
 	`
 
 	var departmentInfo domain.Department
-	departmentInfo.Supervisor = &domain.Supervisor{}
-	departmentInfo.ParentDepartment = &domain.ParentDepartment{}
-	err := r.conn.QueryRow(ctx, query, id).Scan(&departmentInfo.Id, &departmentInfo.Name, &departmentInfo.ParentDepartment.Id,
-		&departmentInfo.ParentDepartment.Name, &departmentInfo.Supervisor.Id, &departmentInfo.Supervisor.Name)
+
+	var supervisorID, parentDepartmentID sql.NullInt32
+	var supervisorName, parentDepartmentName sql.NullString
+
+	err := r.conn.QueryRow(ctx, query, id).Scan(&departmentInfo.Id, &departmentInfo.Name, &parentDepartmentID,
+		&parentDepartmentName, &supervisorID, &supervisorName)
 	if err == pgx.ErrNoRows {
-		return departmentInfo, department.EmployeesNotFound
+		return departmentInfo, department.DepartmentNotFound
 	}
-	if departmentInfo.Supervisor.Id == 0 {
-		departmentInfo.Supervisor = nil
+	if err != nil {
+		return departmentInfo, err
 	}
-	if departmentInfo.ParentDepartment.Id == 0 {
-		departmentInfo.ParentDepartment = nil
+	if parentDepartmentID.Valid {
+		departmentInfo.ParentDepartment = &domain.ParentDepartment{
+			Id:   int(parentDepartmentID.Int32),
+			Name: parentDepartmentName.String,
+		}
 	}
-	//if err != nil {
-	//	return departmentInfo, err
-	//}
+	if supervisorID.Valid {
+		departmentInfo.Supervisor = &domain.Supervisor{
+			Id:   int(supervisorID.Int32),
+			Name: supervisorName.String,
+		}
+	}
 
 	return departmentInfo, nil
 }

@@ -64,6 +64,10 @@ func (f frontendServer) CreateDepartment(w http.ResponseWriter, r *http.Request)
 
 func (f frontendServer) GetDepartment(w http.ResponseWriter, r *http.Request, departmentId int) {
 	departmentWithEmployees, err := f.departmentService.GetDepartment(r.Context(), departmentId)
+	if errors.Is(err, department.DepartmentNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -86,8 +90,15 @@ func (f frontendServer) GetDepartment(w http.ResponseWriter, r *http.Request, de
 }
 
 func (f frontendServer) DeleteDepartment(w http.ResponseWriter, r *http.Request, departmentId int) {
-	//TODO implement me
-	panic("implement me")
+	err := f.departmentService.DeleteDepartment(r.Context(), departmentId)
+	if errors.Is(err, department.DepartmentNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (f frontendServer) EditDepartment(w http.ResponseWriter, r *http.Request, departmentId int) {
