@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5"
+	"portal_back/company/impl/app/department"
 	"portal_back/company/impl/app/employeeaccount"
 	"portal_back/company/impl/domain"
 )
@@ -16,6 +17,62 @@ type employeeAccountRepository struct {
 	conn *pgx.Conn
 }
 
+func (r employeeAccountRepository) GetRootEmployees(ctx context.Context, companyID int) ([]domain.Employee, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r employeeAccountRepository) GetCountOfEmployees(ctx context.Context, departmentID int) (int, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM employee_department
+		WHERE departmentid = $1
+	`
+
+	var countOfDepartmentEmployees int
+	err := r.conn.QueryRow(ctx, query, departmentID).Scan(&countOfDepartmentEmployees)
+	if err == pgx.ErrNoRows {
+		return 0, department.EmployeesNotFound
+	} else if err != nil {
+		return 0, err
+	}
+
+	return countOfDepartmentEmployees, nil
+}
+
+func (r employeeAccountRepository) GetDepartmentEmployees(ctx context.Context, departmentId int) ([]domain.Employee, error) {
+	query := `
+		SELECT employeeaccount.id, employeeaccount.firstname, employeeaccount.secondname, employeeaccount.surname,
+			employeeaccount.dateofbirth, auth_user.email
+		FROM employeeaccount
+		JOIN employee_department ON employeeaccount.id = employee_department.accountid
+		JOIN auth_user ON employeeaccount.userid = auth_user.id
+		WHERE employee_department.departmentid = $1
+	`
+
+	var departmentEmployees []domain.Employee
+	rows, err := r.conn.Query(ctx, query, departmentId)
+	if err == pgx.ErrNoRows {
+		return departmentEmployees, department.EmployeesNotFound
+	} else if err != nil {
+		return departmentEmployees, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var departmentEmployee domain.Employee
+		err := rows.Scan(&departmentEmployee.Id, &departmentEmployee.FirstName, &departmentEmployee.SecondName,
+			&departmentEmployee.Surname, &departmentEmployee.DateOfBirth, &departmentEmployee.Email,
+			&departmentEmployee.Icon, &departmentEmployee.TelephoneNumber)
+		if err != nil {
+			return departmentEmployees, err
+		}
+		departmentEmployees = append(departmentEmployees, departmentEmployee)
+	}
+
+	return departmentEmployees, nil
+}
+
 func (r employeeAccountRepository) CreateEmployee(ctx context.Context, dto domain.EmployeeRequest, userId int, companyId int) error {
 	query := `
 		INSERT INTO employeeaccount
@@ -23,8 +80,7 @@ func (r employeeAccountRepository) CreateEmployee(ctx context.Context, dto domai
 		telephonenumber, avatarurl, dateofbirth)
 		VALUES ($1, $2, $3,	$4, $5, $6)
 	`
-	rows, err := r.conn.Query(ctx, query, dto.FirstName, dto.SecondName, dto.Surname, dto.TelephoneNumber, dto.Icon, dto.DateOfBirth)
-	defer rows.Close()
+	_, err := r.conn.Exec(ctx, query, dto.FirstName, dto.SecondName, dto.Surname, dto.TelephoneNumber, dto.Icon, dto.DateOfBirth)
 	return err
 }
 
@@ -159,8 +215,7 @@ func (r employeeAccountRepository) EditEmployee(ctx context.Context, id int, dto
 		    telephonenumber=$5, avatarurl=$6, dateofbirth=$7,
 		WHERE id=$1
 	`
-	rows, err := r.conn.Query(ctx, query, id, dto.FirstName, dto.SecondName, dto.Surname, dto.TelephoneNumber, dto.Icon, dto.DateOfBirth)
-	defer rows.Close()
+	_, err := r.conn.Exec(ctx, query, id, dto.FirstName, dto.SecondName, dto.Surname, dto.TelephoneNumber, dto.Icon, dto.DateOfBirth)
 	return err
 }
 
@@ -170,8 +225,7 @@ func (r employeeAccountRepository) MoveEmployeeToDepartment(ctx context.Context,
 		SET departmentid=$3
 		WHERE accountid=$1 AND departmentid=$2
 	`
-	rows, err := r.conn.Query(ctx, query, employeeId, departmentFromId, departmentToId)
-	defer rows.Close()
+	_, err := r.conn.Exec(ctx, query, employeeId, departmentFromId, departmentToId)
 	return err
 }
 
@@ -181,7 +235,6 @@ func (r employeeAccountRepository) AddEmployeeToDepartment(ctx context.Context, 
 		(accountid, departmentid)
 		VALUES ($1, $2)
 	`
-	rows, err := r.conn.Query(ctx, query, employeeId, departmentId)
-	defer rows.Close()
+	_, err := r.conn.Exec(ctx, query, employeeId, departmentId)
 	return err
 }
