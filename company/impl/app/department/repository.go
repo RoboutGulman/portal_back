@@ -7,7 +7,7 @@ import (
 
 type Repository interface {
 	GetDepartment(ctx context.Context, id int) (domain.Department, error)
-	CreateDepartment(ctx context.Context, request domain.DepartmentRequest, companyId int) error
+	CreateDepartment(ctx context.Context, request domain.DepartmentRequest, companyId int) (int, error)
 	DeleteDepartment(ctx context.Context, id int) error
 
 	GetChildDepartments(ctx context.Context, id int) ([]domain.Department, error)

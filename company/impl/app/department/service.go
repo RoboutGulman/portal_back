@@ -3,6 +3,7 @@ package department
 import (
 	"context"
 	"errors"
+	"portal_back/company/impl/app/employeeaccount"
 	"portal_back/company/impl/domain"
 	"portal_back/core/network"
 )
@@ -19,12 +20,13 @@ type Service interface {
 var EmployeesNotFound = errors.New("employees in this department not found")
 var NotFound = errors.New("department not found")
 
-func NewService(repository Repository) Service {
-	return &service{repository: repository}
+func NewService(repository Repository, employeeService employeeaccount.Service) Service {
+	return &service{repository: repository, employeeService: employeeService}
 }
 
 type service struct {
-	repository Repository
+	repository      Repository
+	employeeService employeeaccount.Service
 }
 
 func (s *service) GetDepartments(ctx context.Context, companyId int) ([]domain.DepartmentPreview, error) {
@@ -36,7 +38,7 @@ func (s *service) GetDepartments(ctx context.Context, companyId int) ([]domain.D
 	var resultDeps []domain.DepartmentPreview
 
 	for _, dep := range rootDepartments {
-		count, _ := s.repository.GetCountOfEmployees(ctx, dep.Id)
+		count, _ := s.employeeService.GetCountOfEmployees(ctx, dep.Id)
 		var arr []domain.DepartmentPreview
 		depPreview := domain.DepartmentPreview{
 			CountOfEmployees: count,
@@ -57,7 +59,7 @@ func (s *service) findChildren(ctx context.Context, department domain.Department
 		return err
 	}
 	for _, dep := range childDepartments {
-		count, _ := s.repository.GetCountOfEmployees(ctx, dep.Id)
+		count, _ := s.employeeService.GetCountOfEmployees(ctx, dep.Id)
 		var arr []domain.DepartmentPreview
 		normDep := domain.DepartmentPreview{
 			CountOfEmployees: count,
@@ -73,7 +75,25 @@ func (s *service) findChildren(ctx context.Context, department domain.Department
 }
 
 func (s *service) CreateDepartment(ctx context.Context, dto domain.DepartmentRequest, companyId int) error {
-	return s.repository.CreateDepartment(ctx, dto, companyId)
+	id, err := s.repository.CreateDepartment(ctx, dto, companyId)
+	if err != nil {
+		return err
+	}
+	var moveArray []domain.MoveEmployeeInfo
+	request := domain.MoveEmployeesRequest{
+		DepartmentToID: id,
+		Employees:      &moveArray,
+	}
+
+	for _, id := range dto.EmployeeIDs {
+		moveArray = append(moveArray, domain.MoveEmployeeInfo{
+			DepartmentFromID: nil,
+			EmployeeID:       id,
+		})
+	}
+
+	err = s.employeeService.MoveEmployeesToDepartment(ctx, request)
+	return err
 }
 
 func (s *service) GetDepartment(ctx context.Context, id int) (domain.DepartmentWithEmployees, error) {
@@ -82,7 +102,7 @@ func (s *service) GetDepartment(ctx context.Context, id int) (domain.DepartmentW
 		return domain.DepartmentWithEmployees{}, err
 	}
 	var arr []domain.DepartmentWithEmployees
-	employees, _ := s.repository.GetDepartmentEmployees(ctx, id)
+	employees, _ := s.employeeService.GetDepartmentEmployees(ctx, id)
 	result := domain.DepartmentWithEmployees{
 		Departments:      &arr,
 		Employees:        employees,
@@ -106,7 +126,7 @@ func (s *service) findChildrenWithEmployees(ctx context.Context, department doma
 		return err
 	}
 	for _, dep := range childDepartments {
-		employees, _ := s.repository.GetDepartmentEmployees(ctx, dep.Id)
+		employees, _ := s.employeeService.GetDepartmentEmployees(ctx, dep.Id)
 		var arr []domain.DepartmentWithEmployees
 		normDep := domain.DepartmentWithEmployees{
 			Departments: &arr,
@@ -135,6 +155,7 @@ func (s *service) DeleteDepartment(ctx context.Context, id int) error {
 	}
 
 	childDepartments, err := s.repository.GetChildDepartments(ctx, id)
+	employees, err := s.employeeService.GetDepartmentEmployees(ctx, id)
 	if department.ParentDepartment != nil {
 		for _, child := range childDepartments {
 			err = s.repository.MoveDepartment(ctx, child.Id, department.ParentDepartment.Id)
@@ -142,9 +163,31 @@ func (s *service) DeleteDepartment(ctx context.Context, id int) error {
 				return err
 			}
 		}
+
+		var moveArray []domain.MoveEmployeeInfo
+		request := domain.MoveEmployeesRequest{
+			DepartmentToID: department.ParentDepartment.Id,
+			Employees:      &moveArray,
+		}
+
+		for _, employee := range employees {
+			moveArray = append(moveArray, domain.MoveEmployeeInfo{
+				DepartmentFromID: &id,
+				EmployeeID:       employee.Id,
+			})
+		}
+
+		err = s.employeeService.MoveEmployeesToDepartment(ctx, request)
 	} else {
 		for _, child := range childDepartments {
 			err = s.repository.MoveDepartmentToRoot(ctx, child.Id)
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, employee := range employees {
+			err := s.employeeService.DeleteEmployeeFromDepartment(ctx, employee.Id, id)
 			if err != nil {
 				return err
 			}

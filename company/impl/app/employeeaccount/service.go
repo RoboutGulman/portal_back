@@ -12,11 +12,16 @@ var EmployeeAlreadyExists = errors.New("employee with this email already exists 
 var EmployeeNotFound = errors.New("employee not found")
 
 type Service interface {
-	CreateEmployee(ctx context.Context, dto domain.EmployeeRequest, requestInfo network.RequestInfo) error
 	GetEmployee(ctx context.Context, id int) (domain.EmployeeWithConnections, error)
-	DeleteEmployee(ctx context.Context, id int, requestInfo network.RequestInfo) error
+	CreateEmployee(ctx context.Context, dto domain.EmployeeRequest, companyID int) error
+	DeleteEmployee(ctx context.Context, id int, departmentID int) error
 	EditEmployee(ctx context.Context, id int, dto domain.EmployeeRequest, requestInfo network.RequestInfo) error
+
+	GetCountOfEmployees(ctx context.Context, departmentID int) (int, error)
+	GetDepartmentEmployees(ctx context.Context, departmentID int) ([]domain.Employee, error)
+
 	MoveEmployeesToDepartment(ctx context.Context, dto domain.MoveEmployeesRequest) error
+	DeleteEmployeeFromDepartment(ctx context.Context, id int, departmentID int) error
 }
 
 func NewService(repository Repository, userService internalapi.UserRequestService) Service {
@@ -28,24 +33,24 @@ type service struct {
 	userService internalapi.UserRequestService
 }
 
-func (s *service) CreateEmployee(ctx context.Context, dto domain.EmployeeRequest, requestInfo network.RequestInfo) error {
+func (s *service) CreateEmployee(ctx context.Context, dto domain.EmployeeRequest, companyID int) error {
 	userId, err := s.createUserOrGetExisting(dto.Email)
 	if err != nil {
 		return nil
 	}
 
-	_, err = s.repository.GetCompanyEmployee(ctx, userId, requestInfo.CompanyId)
+	_, err = s.repository.GetCompanyEmployee(ctx, userId, companyID)
 	if !errors.Is(err, EmployeeNotFound) {
 		return EmployeeAlreadyExists
 	}
 
-	err = s.repository.CreateEmployee(ctx, dto, userId, requestInfo.CompanyId)
+	err = s.repository.CreateEmployee(ctx, dto, userId, companyID)
 	if err != nil {
 		return err
 	}
 
 	if dto.DepartmentID != nil {
-		createdEmployee, err := s.repository.GetCompanyEmployee(ctx, userId, requestInfo.CompanyId)
+		createdEmployee, err := s.repository.GetCompanyEmployee(ctx, userId, companyID)
 		if err != nil {
 			return err
 		}
@@ -56,16 +61,16 @@ func (s *service) CreateEmployee(ctx context.Context, dto domain.EmployeeRequest
 }
 
 func (s *service) createUserOrGetExisting(Email string) (int, error) {
-	createUserErr := s.userService.CreateNewUser(Email)
+	err := s.userService.CreateNewUser(Email)
 
-	if createUserErr != nil && !errors.Is(createUserErr, internalapi.UserAlreadyExists) {
-		return -1, createUserErr
+	if err != nil && !errors.Is(err, internalapi.UserAlreadyExists) {
+		return -1, err
 	}
 
-	userId, getUserErr := s.userService.GetUserId(Email)
+	userId, err := s.userService.GetUserId(Email)
 
-	if getUserErr != nil {
-		return -1, getUserErr
+	if err != nil {
+		return -1, err
 	}
 
 	return userId, nil
@@ -75,9 +80,22 @@ func (s *service) GetEmployee(ctx context.Context, id int) (domain.EmployeeWithC
 	return s.repository.GetEmployee(ctx, id)
 }
 
-func (s *service) DeleteEmployee(ctx context.Context, id int, requestInfo network.RequestInfo) error {
+func (s *service) DeleteEmployee(ctx context.Context, id int, departmentID int) error {
+	err := s.repository.DeleteEmployeeFromDepartment(ctx, id, departmentID)
+	if err != nil {
+		return err
+	}
+
+	employee, err := s.repository.GetEmployee(ctx, id)
+	if len(employee.Departments) < 1 {
+		err = s.repository.DeleteEmployee(ctx, id)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
+
 }
 
 func (s *service) EditEmployee(ctx context.Context, id int, dto domain.EmployeeRequest, requestInfo network.RequestInfo) error {
@@ -85,7 +103,7 @@ func (s *service) EditEmployee(ctx context.Context, id int, dto domain.EmployeeR
 }
 
 func (s *service) MoveEmployeesToDepartment(ctx context.Context, dto domain.MoveEmployeesRequest) error {
-	for _, l := range dto.Employees {
+	for _, l := range *dto.Employees {
 		if l.DepartmentFromID != nil {
 			err := s.repository.MoveEmployeeToDepartment(ctx, l.EmployeeID, *l.DepartmentFromID, dto.DepartmentToID)
 			if err != nil {
@@ -99,4 +117,16 @@ func (s *service) MoveEmployeesToDepartment(ctx context.Context, dto domain.Move
 		}
 	}
 	return nil
+}
+
+func (s *service) GetDepartmentEmployees(ctx context.Context, departmentID int) ([]domain.Employee, error) {
+	return s.repository.GetDepartmentEmployees(ctx, departmentID)
+}
+
+func (s *service) GetCountOfEmployees(ctx context.Context, departmentID int) (int, error) {
+	return s.repository.GetCountOfEmployees(ctx, departmentID)
+}
+
+func (s *service) DeleteEmployeeFromDepartment(ctx context.Context, id int, departmentID int) error {
+	return s.repository.DeleteEmployeeFromDepartment(ctx, id, departmentID)
 }

@@ -9,6 +9,7 @@ type Repository interface {
 	CreateEmployee(ctx context.Context, dto domain.EmployeeRequest, userID int, companyID int) error
 	GetEmployee(ctx context.Context, id int) (domain.EmployeeWithConnections, error)
 	DeleteEmployee(ctx context.Context, id int) error
+	DeleteEmployeeFromDepartment(ctx context.Context, id int, departmentID int) error
 	EditEmployee(ctx context.Context, id int, dto domain.EmployeeRequest) error
 
 	GetRootEmployees(ctx context.Context, companyID int) ([]domain.Employee, error)

@@ -112,8 +112,15 @@ func (f frontendServer) GetEmployees(w http.ResponseWriter, r *http.Request) {
 }
 
 func (f frontendServer) CreateEmployee(w http.ResponseWriter, r *http.Request) {
-	//TODO implement me
-	panic("implement me")
+	network.WrapWithBody(f.authRequestService, w, r, func(info network.RequestInfo, request frontendapi.EmployeeRequest) {
+		err := f.accountService.CreateEmployee(r.Context(), mapper.MapEmployeeRequest(request), info.CompanyId)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+	})
 }
 
 func (f frontendServer) MoveEmployeesToDepartment(w http.ResponseWriter, r *http.Request) {

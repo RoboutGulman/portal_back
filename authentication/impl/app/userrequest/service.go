@@ -18,5 +18,5 @@ func (s service) CreateNewUser(email string) error {
 
 func (s service) GetUserId(email string) (int, error) {
 	//TODO implement me
-	panic("implement me")
+	return 35, nil
 }
