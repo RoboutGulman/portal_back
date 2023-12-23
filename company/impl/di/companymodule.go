@@ -18,7 +18,7 @@ func InitCompanyModule(authApi internalapi.AuthRequestService, userApi internala
 	accountService := employeeaccount.NewService(accountRepo, userApi)
 
 	departmentRepo := sql.NewDepartmentRepository(conn)
-	departmentService := department.NewService(departmentRepo)
+	departmentService := department.NewService(departmentRepo, accountService)
 
 	server := transport.NewServer(accountService, departmentService, rolesApi, authApi)
 

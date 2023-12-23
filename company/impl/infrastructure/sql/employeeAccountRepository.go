@@ -17,9 +17,47 @@ type employeeAccountRepository struct {
 	conn *pgx.Conn
 }
 
+func (r employeeAccountRepository) DeleteEmployeeFromDepartment(ctx context.Context, id int, departmentID int) error {
+	query := `
+		DELETE FROM employee_department
+		WHERE id=$1
+		WHERE accountid = $1 ANDdepartmentid = $2
+	`
+	_, err := r.conn.Exec(ctx, query, id, departmentID)
+	return err
+}
+
 func (r employeeAccountRepository) GetRootEmployees(ctx context.Context, companyID int) ([]domain.Employee, error) {
-	//TODO implement me
-	panic("implement me")
+	query := `
+		SELECT employeeaccount.id, employeeaccount.firstname, employeeaccount.secondname, employeeaccount.surname,
+			employeeaccount.dateofbirth, auth_user.email
+		FROM employeeaccount
+		JOIN employee_department ON employeeaccount.id = employee_department.accountid
+		JOIN auth_user ON employeeaccount.userid = auth_user.id
+		WHERE employee_department.departmentid = $1
+	`
+
+	var departmentEmployees []domain.Employee
+	rows, err := r.conn.Query(ctx, query, companyID)
+	if err == pgx.ErrNoRows {
+		return departmentEmployees, department.EmployeesNotFound
+	} else if err != nil {
+		return departmentEmployees, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var departmentEmployee domain.Employee
+		err := rows.Scan(&departmentEmployee.Id, &departmentEmployee.FirstName, &departmentEmployee.SecondName,
+			&departmentEmployee.Surname, &departmentEmployee.DateOfBirth, &departmentEmployee.Email,
+			&departmentEmployee.Icon, &departmentEmployee.TelephoneNumber)
+		if err != nil {
+			return departmentEmployees, err
+		}
+		departmentEmployees = append(departmentEmployees, departmentEmployee)
+	}
+
+	return departmentEmployees, nil
 }
 
 func (r employeeAccountRepository) GetCountOfEmployees(ctx context.Context, departmentID int) (int, error) {
@@ -77,10 +115,10 @@ func (r employeeAccountRepository) CreateEmployee(ctx context.Context, dto domai
 	query := `
 		INSERT INTO employeeaccount
 		(firstname, secondname, surname,
-		telephonenumber, avatarurl, dateofbirth)
-		VALUES ($1, $2, $3,	$4, $5, $6)
+		telephonenumber, avatarurl, dateofbirth, userid, companyid, job)
+		VALUES ($1, $2, $3,	$4, $5, $6, $7, $8, $9)
 	`
-	_, err := r.conn.Exec(ctx, query, dto.FirstName, dto.SecondName, dto.Surname, dto.TelephoneNumber, dto.Icon, dto.DateOfBirth)
+	_, err := r.conn.Exec(ctx, query, dto.FirstName, dto.SecondName, dto.Surname, dto.TelephoneNumber, dto.Icon, dto.DateOfBirth, userId, companyId, "a")
 	return err
 }
 

@@ -45,15 +45,16 @@ func (r repository) DeleteDepartment(ctx context.Context, id int) error {
 	return err
 }
 
-func (r repository) CreateDepartment(ctx context.Context, request domain.DepartmentRequest, companyId int) error {
+func (r repository) CreateDepartment(ctx context.Context, request domain.DepartmentRequest, companyId int) (int, error) {
 	query := `
 		INSERT INTO department
 		(name, parentdepartmentid, companyid, supervisorid)
 		VALUES ($1, $2, $3,	$4)
+		RETURNING id
 	`
-
-	_, err := r.conn.Exec(ctx, query, request.Name, request.ParentDepartmentID, companyId, request.SupervisorID)
-	return err
+	lastInsertId := 0
+	err := r.conn.QueryRow(ctx, query, request.Name, request.ParentDepartmentID, companyId, request.SupervisorID).Scan(&lastInsertId)
+	return lastInsertId, err
 }
 
 func (r repository) GetDepartment(ctx context.Context, id int) (domain.Department, error) {
