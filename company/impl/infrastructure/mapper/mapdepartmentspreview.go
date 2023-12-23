@@ -7,8 +7,9 @@ import (
 
 func MapDepartmentsPreview(departments []domain.DepartmentPreview) []frontendapi.Departments {
 	var result []frontendapi.Departments
-	var childDepartments []frontendapi.Departments
+
 	for _, d := range departments {
+		var childDepartments []frontendapi.Departments
 		if d.Departments != nil && len(*d.Departments) > 0 {
 			childDepartments = MapDepartmentsPreview(*d.Departments)
 		}
