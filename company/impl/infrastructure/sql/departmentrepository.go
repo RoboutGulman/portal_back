@@ -16,6 +16,26 @@ type repository struct {
 	conn *pgx.Conn
 }
 
+func (r repository) MoveDepartment(ctx context.Context, departmentID int, newParentID int) error {
+	query := `
+		UPDATE department
+		SET parentdepartmentid=$2
+		WHERE departmentid=$1
+	`
+	_, err := r.conn.Exec(ctx, query, departmentID, newParentID)
+	return err
+}
+
+func (r repository) MoveDepartmentToRoot(ctx context.Context, id int) error {
+	query := `
+		UPDATE department
+		SET parentdepartmentid=NULL
+		WHERE departmentid=$1
+	`
+	_, err := r.conn.Exec(ctx, query, id)
+	return err
+}
+
 func (r repository) DeleteDepartment(ctx context.Context, id int) error {
 	query := `
 		DELETE FROM department
@@ -54,7 +74,7 @@ func (r repository) GetDepartment(ctx context.Context, id int) (domain.Departmen
 	err := r.conn.QueryRow(ctx, query, id).Scan(&departmentInfo.Id, &departmentInfo.Name, &parentDepartmentID,
 		&parentDepartmentName, &supervisorID, &supervisorName)
 	if err == pgx.ErrNoRows {
-		return departmentInfo, department.DepartmentNotFound
+		return departmentInfo, department.NotFound
 	}
 	if err != nil {
 		return departmentInfo, err

@@ -17,7 +17,7 @@ type Service interface {
 }
 
 var EmployeesNotFound = errors.New("employees in this department not found")
-var DepartmentNotFound = errors.New("department not found")
+var NotFound = errors.New("department not found")
 
 func NewService(repository Repository) Service {
 	return &service{repository: repository}
@@ -29,10 +29,12 @@ type service struct {
 
 func (s *service) GetDepartments(ctx context.Context, companyId int) ([]domain.DepartmentPreview, error) {
 	rootDepartments, err := s.repository.GetCompanyDepartments(ctx, companyId)
+
 	if err != nil {
 		return nil, err
 	}
 	var resultDeps []domain.DepartmentPreview
+
 	for _, dep := range rootDepartments {
 		count, _ := s.repository.GetCountOfEmployees(ctx, dep.Id)
 		var arr []domain.DepartmentPreview
@@ -127,10 +129,28 @@ func (s *service) findChildrenWithEmployees(ctx context.Context, department doma
 }
 
 func (s *service) DeleteDepartment(ctx context.Context, id int) error {
-	_, err := s.repository.GetDepartment(ctx, id)
+	department, err := s.repository.GetDepartment(ctx, id)
 	if err != nil {
 		return err
 	}
+
+	childDepartments, err := s.repository.GetChildDepartments(ctx, id)
+	if department.ParentDepartment != nil {
+		for _, child := range childDepartments {
+			err = s.repository.MoveDepartment(ctx, child.Id, department.ParentDepartment.Id)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		for _, child := range childDepartments {
+			err = s.repository.MoveDepartmentToRoot(ctx, child.Id)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return s.repository.DeleteDepartment(ctx, id)
 }
 
