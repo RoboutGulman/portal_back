@@ -30,11 +30,10 @@ func (r employeeAccountRepository) DeleteEmployeeFromDepartment(ctx context.Cont
 func (r employeeAccountRepository) GetRootEmployees(ctx context.Context, companyID int) ([]domain.Employee, error) {
 	query := `
 		SELECT employeeaccount.id, employeeaccount.firstname, employeeaccount.secondname, employeeaccount.surname,
-			employeeaccount.dateofbirth, auth_user.email
+			employeeaccount.dateofbirth, auth_user.email, employeeaccount.telephonenumber
 		FROM employeeaccount
-		JOIN employee_department ON employeeaccount.id = employee_department.accountid
 		JOIN auth_user ON employeeaccount.userid = auth_user.id
-		WHERE employee_department.departmentid = $1
+		WHERE employeeaccount.id NOT IN (SELECT accountid FROM employee_department) AND companyID = $1
 	`
 
 	var departmentEmployees []domain.Employee
@@ -50,7 +49,7 @@ func (r employeeAccountRepository) GetRootEmployees(ctx context.Context, company
 		var departmentEmployee domain.Employee
 		err := rows.Scan(&departmentEmployee.Id, &departmentEmployee.FirstName, &departmentEmployee.SecondName,
 			&departmentEmployee.Surname, &departmentEmployee.DateOfBirth, &departmentEmployee.Email,
-			&departmentEmployee.Icon, &departmentEmployee.TelephoneNumber)
+			&departmentEmployee.TelephoneNumber)
 		if err != nil {
 			return departmentEmployees, err
 		}

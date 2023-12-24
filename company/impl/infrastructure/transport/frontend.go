@@ -107,8 +107,51 @@ func (f frontendServer) EditDepartment(w http.ResponseWriter, r *http.Request, d
 }
 
 func (f frontendServer) GetEmployees(w http.ResponseWriter, r *http.Request) {
-	//TODO implement me
-	panic("implement me")
+	network.Wrap(f.authRequestService, w, r, func(info network.RequestInfo) {
+		departments, err := f.departmentService.GetDepartments(r.Context(), info.CompanyId)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		var result frontendapi.GetAllEmployeesResponse
+
+		result.IsEditable = true
+
+		rootEmployees, err := f.accountService.GetRootEmployees(r.Context(), info.CompanyId)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		var employees []frontendapi.Employee
+		for _, emp := range rootEmployees {
+			employees = append(employees, mapper.MapEmployee(emp))
+		}
+		result.Employees = employees
+
+		for _, dep := range departments {
+			departmentWithEmployees, err := f.departmentService.GetDepartment(r.Context(), dep.Id)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			result.Departments = append(result.Departments, mapper.MapDepartment(departmentWithEmployees))
+		}
+
+		resp, err := json.Marshal(result)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(resp)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+	})
 }
 
 func (f frontendServer) CreateEmployee(w http.ResponseWriter, r *http.Request) {

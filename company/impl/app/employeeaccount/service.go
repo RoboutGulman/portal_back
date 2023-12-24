@@ -19,6 +19,7 @@ type Service interface {
 
 	GetCountOfEmployees(ctx context.Context, departmentID int) (int, error)
 	GetDepartmentEmployees(ctx context.Context, departmentID int) ([]domain.Employee, error)
+	GetRootEmployees(ctx context.Context, companyID int) ([]domain.Employee, error)
 
 	MoveEmployeesToDepartment(ctx context.Context, dto domain.MoveEmployeesRequest) error
 	DeleteEmployeeFromDepartment(ctx context.Context, id int, departmentID int) error
@@ -31,6 +32,10 @@ func NewService(repository Repository, userService internalapi.UserRequestServic
 type service struct {
 	repository  Repository
 	userService internalapi.UserRequestService
+}
+
+func (s *service) GetRootEmployees(ctx context.Context, companyID int) ([]domain.Employee, error) {
+	return s.repository.GetRootEmployees(ctx, companyID)
 }
 
 func (s *service) CreateEmployee(ctx context.Context, dto domain.EmployeeRequest, companyID int) error {

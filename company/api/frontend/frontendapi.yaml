@@ -142,18 +142,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  isEditable:
-                    type: boolean
-                  employees:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/employee'
-                  departments:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/departmentWithEmployees'
+                  $ref: '#/components/schemas/getAllEmployeesResponse'
         '403':
           description: Forbidden
         '401':
@@ -266,6 +255,23 @@ paths:
           description: Unauthorized
 components:
   schemas:
+    getAllEmployeesResponse:
+      type: object
+      required:
+        - isEditable
+        - employees
+        - departments
+      properties:
+        isEditable:
+          type: boolean
+        employees:
+          type: array
+          items:
+            $ref: '#/components/schemas/employee'
+        departments:
+          type: array
+          items:
+            $ref: '#/components/schemas/department'
     deleteEmployeeRequest:
       type: array
       items:
@@ -495,26 +501,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/departments'
-    departmentWithEmployees:
-      type: object
-      required:
-        - id
-        - name
-        - employees
-        - departments
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        employees:
-          type: array
-          items:
-            $ref: '#/components/schemas/employee'
-        departments:
-          type: array
-          items:
-            $ref: '#/components/schemas/departmentWithEmployees'
     moveEmployeeInfo:
       type: object
       required:
