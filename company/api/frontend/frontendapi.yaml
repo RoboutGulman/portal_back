@@ -246,17 +246,16 @@ paths:
           description: Forbidden
         '401':
           description: Unauthorized
-  /employee/{employeeID}/delete:
+  /employee/delete:
     delete:
       operationId: DeleteEmployee
       tags:
         - Employee
-      parameters:
-        - name: employeeID
-          in: path
-          required: true
-          schema:
-            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/deleteEmployeeRequest'
       description: Удалить сотрудника
       responses:
         '200':
@@ -267,6 +266,18 @@ paths:
           description: Unauthorized
 components:
   schemas:
+    deleteEmployeeRequest:
+      type: array
+      items:
+        type: object
+        required:
+          - employeeID
+          - departmentID
+        properties:
+          employeeID:
+            type: integer
+          departmentID:
+            type: integer
     role:
       type: object
       required:
@@ -504,6 +515,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/departmentWithEmployees'
+    moveEmployeeInfo:
+      type: object
+      required:
+        - idEmployee
+      properties:
+        EmployeeID:
+          type: integer
+        DepartmentFromID:
+          type: integer
     moveEmployeesRequest:
       type: object
       required:
@@ -515,12 +535,5 @@ components:
         employees:
           type: array
           items:
-            type: object
-            required:
-              - idEmployee
-            properties:
-              EmployeeID:
-                type: integer
-              DepartmentFromID:
-                type: integer
+            $ref: '#/components/schemas/moveEmployeeInfo'
 
