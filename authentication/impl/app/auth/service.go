@@ -8,6 +8,7 @@ import (
 
 var ErrUserNotFound = errors.New("user not found")
 var ErrUserNotLogged = errors.New("user not logged")
+var ErrUserAlreadyExists = errors.New("user already exists")
 
 type LoginData struct {
 	Email    string
@@ -18,6 +19,8 @@ type Service interface {
 	GetSaltByEmail(ctx context.Context, email string) (string, error)
 	Login(ctx context.Context, logData LoginData) (token.LoginData, error)
 	Logout(ctx context.Context, token string) error
+	CreateUser(ctx context.Context, email string) error
+	GetUserByEmail(ctx context.Context, email string) (int, error)
 }
 
 func NewService(repository Repository, tokenService token.Service) Service {
@@ -27,6 +30,18 @@ func NewService(repository Repository, tokenService token.Service) Service {
 type service struct {
 	repository   Repository
 	tokenService token.Service
+}
+
+func (s *service) CreateUser(ctx context.Context, email string) error {
+	_, err := s.repository.GetUserByEmail(ctx, email)
+	if err != nil && errors.Is(err, ErrUserNotFound) {
+		return s.repository.CreateUser(ctx, email)
+	}
+	return ErrUserAlreadyExists
+}
+
+func (s *service) GetUserByEmail(ctx context.Context, email string) (int, error) {
+	return s.repository.GetUserByEmail(ctx, email)
 }
 
 func (s *service) GetSaltByEmail(ctx context.Context, email string) (string, error) {

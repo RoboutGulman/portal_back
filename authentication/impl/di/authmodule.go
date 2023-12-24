@@ -21,7 +21,7 @@ func InitAuthModule(conn *pgx.Conn) (internalapi.AuthRequestService, internalapi
 	authService := auth.NewService(authRepo, tokenService)
 	server := transport.NewServer(authService, tokenService)
 	authRequestService := authrequest.NewService()
-	userRequestService := userrequest.NewService()
+	userRequestService := userrequest.NewService(authService)
 
 	http.Handle("/authorization/", frontendapi.Handler(server))
 

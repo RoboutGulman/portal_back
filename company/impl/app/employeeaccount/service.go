@@ -34,7 +34,7 @@ type service struct {
 }
 
 func (s *service) CreateEmployee(ctx context.Context, dto domain.EmployeeRequest, companyID int) error {
-	userId, err := s.createUserOrGetExisting(dto.Email)
+	userId, err := s.createUserOrGetExisting(ctx, dto.Email)
 	if err != nil {
 		return nil
 	}
@@ -60,14 +60,14 @@ func (s *service) CreateEmployee(ctx context.Context, dto domain.EmployeeRequest
 	return nil
 }
 
-func (s *service) createUserOrGetExisting(Email string) (int, error) {
-	err := s.userService.CreateNewUser(Email)
+func (s *service) createUserOrGetExisting(ctx context.Context, email string) (int, error) {
+	err := s.userService.CreateNewUser(ctx, email)
 
 	if err != nil && !errors.Is(err, internalapi.UserAlreadyExists) {
 		return -1, err
 	}
 
-	userId, err := s.userService.GetUserId(Email)
+	userId, err := s.userService.GetUserId(ctx, email)
 
 	if err != nil {
 		return -1, err

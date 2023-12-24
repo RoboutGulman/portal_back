@@ -1,22 +1,28 @@
 package userrequest
 
-import "portal_back/authentication/api/internalapi"
+import (
+	"context"
+	"errors"
+	"portal_back/authentication/api/internalapi"
+	"portal_back/authentication/impl/app/auth"
+)
 
-func NewService() internalapi.UserRequestService {
-	return &service{}
+func NewService(authService auth.Service) internalapi.UserRequestService {
+	return &service{authService: authService}
 }
 
 type service struct {
+	authService auth.Service
 }
 
-func (s service) CreateNewUser(email string) error {
-	//TODO implement me
-	panic("implement me")
-
-	//если такой юзер уже существует, падает ошибка UserAlreadyExists
+func (s service) CreateNewUser(ctx context.Context, email string) error {
+	err := s.authService.CreateUser(ctx, email)
+	if errors.Is(err, auth.ErrUserAlreadyExists) {
+		return internalapi.UserAlreadyExists
+	}
+	return err
 }
 
-func (s service) GetUserId(email string) (int, error) {
-	//TODO implement me
-	return 35, nil
+func (s service) GetUserId(ctx context.Context, email string) (int, error) {
+	return s.authService.GetUserByEmail(ctx, email)
 }
