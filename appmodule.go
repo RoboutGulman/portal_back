@@ -9,7 +9,8 @@ import (
 	di "portal_back/authentication/cmd"
 	companycmd "portal_back/company/cmd"
 	documentationDi "portal_back/documentation/impl/di"
-	rolesDi "portal_back/roles/impl/di"
+	rolescmd "portal_back/role/cmd"
+	rolesDi "portal_back/role/impl/di"
 )
 
 func InitAppModule() {
@@ -23,7 +24,8 @@ func InitAppModule() {
 	// можно инжектить в другие модули
 	authService.IsAuthenticated("")
 
-	rolesModule := rolesDi.InitRolesModule()
+	rolesModule, roleConn, err := rolesDi.InitRolesModule(rolescmd.NewConfig())
+	defer roleConn.Close(context.Background())
 
 	companycmd.InitCompanyModule(companycmd.NewConfig(), authService, userRequestService, rolesModule)
 

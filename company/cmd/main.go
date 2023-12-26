@@ -12,10 +12,10 @@ import (
 	"portal_back/company/impl/app/employeeaccount"
 	"portal_back/company/impl/infrastructure/sql"
 	"portal_back/company/impl/infrastructure/transport"
-	rolesapi "portal_back/roles/api/internalapi"
+	rolesapi "portal_back/role/api/internalapi"
 )
 
-func InitCompanyModule(config Config, authApi internalapi.AuthRequestService, userApi internalapi.UserRequestService, rolesApi rolesapi.RolesRequestService) {
+func InitCompanyModule(config Config, authApi internalapi.AuthRequestService, userApi internalapi.UserRequestService, rolesApi rolesapi.RoleRequestService) {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:5432/%s", config.DBUser, config.DBPassword, config.DBHost, config.DBName)
 
 	conn, _ := pgx.Connect(context.Background(), connStr)

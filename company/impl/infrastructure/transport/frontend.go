@@ -10,17 +10,17 @@ import (
 	"portal_back/company/impl/app/employeeaccount"
 	"portal_back/company/impl/infrastructure/mapper"
 	"portal_back/core/network"
-	"portal_back/roles/api/internalapi"
+	"portal_back/role/api/internalapi"
 )
 
-func NewServer(accountService employeeaccount.Service, departmentService department.Service, rolesService internalapi.RolesRequestService, authRequestService authInteralapi.AuthRequestService) frontendapi.ServerInterface {
+func NewServer(accountService employeeaccount.Service, departmentService department.Service, rolesService internalapi.RoleRequestService, authRequestService authInteralapi.AuthRequestService) frontendapi.ServerInterface {
 	return &frontendServer{accountService, departmentService, rolesService, authRequestService}
 }
 
 type frontendServer struct {
 	accountService     employeeaccount.Service
 	departmentService  department.Service
-	rolesService       internalapi.RolesRequestService
+	rolesService       internalapi.RoleRequestService
 	authRequestService authInteralapi.AuthRequestService
 }
 
