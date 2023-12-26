@@ -67,6 +67,12 @@ func (s *frontendServer) Login(w http.ResponseWriter, r *http.Request) {
 	} else if err == nil {
 
 		s.setRefreshTokenToCookie(w, loginData.Tokens.RefreshToken)
+		companyID, err := s.authService.GetCompanyByUserID(r.Context(), loginData.User.Id)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		resp, err := json.Marshal(frontendapi.LoginResponse{
 			AccessJwtToken: loginData.Tokens.AccessToken,
@@ -74,7 +80,7 @@ func (s *frontendServer) Login(w http.ResponseWriter, r *http.Request) {
 				Id: loginData.User.Id,
 			},
 			Company: frontendapi.Company{
-				Id: 1, // TODO Заменить на реальный
+				Id: companyID,
 			},
 		})
 

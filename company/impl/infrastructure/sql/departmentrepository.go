@@ -16,6 +16,16 @@ type repository struct {
 	conn *pgx.Conn
 }
 
+func (r repository) EditDepartment(ctx context.Context, id int, dto domain.DepartmentRequest) error {
+	query := `
+		UPDATE department
+		SET (name, parentdepartmentid, supervisorid) = ($1, $2, $3)
+		WHERE id=$4
+	`
+	_, err := r.conn.Exec(ctx, query, dto.Name, dto.ParentDepartmentID, dto.SupervisorID, id)
+	return err
+}
+
 func (r repository) MoveDepartment(ctx context.Context, departmentID int, newParentID int) error {
 	query := `
 		UPDATE department

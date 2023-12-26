@@ -22,17 +22,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - isEditable
-                  - departments
-                properties:
-                  isEditable:
-                    type: boolean
-                  departments:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/departments'
+                $ref: '#/components/schemas/getAllDepartmentsResponse'
         '403':
           description: Forbidden
         '401':
@@ -55,15 +45,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - isEditable
-                  - department
-                properties:
-                  isEditable:
-                    type: boolean
-                  department:
-                    $ref: '#/components/schemas/department'
+                $ref: '#/components/schemas/getDepartmentResponse'
         '403':
           description: Forbidden
         '401':
@@ -147,6 +129,28 @@ paths:
           description: Forbidden
         '401':
           description: Unauthorized
+  /employee/list:
+    post:
+      operationId: GetEmployeeList
+      tags:
+        - Employee
+      description: принимает массив id, возвращает массив пользователей
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getEmployeeListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getEmployeesListResponse'
+        '403':
+          description: Forbidden
+        '401':
+          description: Unauthorized
   /employee/{employeeID}:
     get:
       operationId: GetEmployee
@@ -165,12 +169,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  isEditable:
-                    type: boolean
-                  employee:
-                    $ref: '#/components/schemas/employeeWithConnections'
+                $ref: '#/components/schemas/getEmployeeResponse'
         '403':
           description: Forbidden
         '401':
@@ -255,6 +254,42 @@ paths:
           description: Unauthorized
 components:
   schemas:
+    getEmployeesListResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/employee'
+    getAllDepartmentsResponse:
+      type: object
+      required:
+        - isEditable
+        - departments
+      properties:
+        isEditable:
+          type: boolean
+        departments:
+          type: array
+          items:
+            $ref: '#/components/schemas/departments'
+    getDepartmentResponse:
+      type: object
+      required:
+        - isEditable
+        - department
+      properties:
+        isEditable:
+          type: boolean
+        department:
+          $ref: '#/components/schemas/department'
+    getEmployeeResponse:
+        type: object
+        required:
+          - isEditable
+          - employee
+        properties:
+          isEditable:
+            type: boolean
+          employee:
+            $ref: '#/components/schemas/employeeWithConnections'
     getAllEmployeesResponse:
       type: object
       required:
@@ -272,6 +307,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/department'
+    getEmployeeListRequest:
+      type: array
+      items:
+        type: integer
     deleteEmployeeRequest:
       type: array
       items:

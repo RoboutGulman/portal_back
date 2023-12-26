@@ -1,0 +1,50 @@
+openapi: 3.0.3
+info:
+  title: Documentation api
+  version: 1.0.0
+paths:
+  /roles:
+    get:
+      description: get list of roles
+      operationId: GetRoles
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/rolesResponse'
+        '403':
+          description: Forbidden
+        '401':
+          description: Unauthorized
+
+components:
+  schemas:
+    rolesResponse:
+      type: object
+      required:
+        - roles
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/role'
+
+    role:
+      format: Role
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - roleType
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        roleType:
+          type: integer

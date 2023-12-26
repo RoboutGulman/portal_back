@@ -5,7 +5,6 @@ import (
 	"errors"
 	"portal_back/company/impl/app/employeeaccount"
 	"portal_back/company/impl/domain"
-	"portal_back/core/network"
 )
 
 type Service interface {
@@ -13,8 +12,7 @@ type Service interface {
 	CreateDepartment(ctx context.Context, dto domain.DepartmentRequest, companyId int) error
 	GetDepartment(ctx context.Context, id int) (domain.DepartmentWithEmployees, error)
 	DeleteDepartment(ctx context.Context, id int) error
-	EditDepartment(ctx context.Context, id int, dto domain.DepartmentRequest, requestInfo network.RequestInfo) error
-	GetEmployees(ctx context.Context, companyId int) error
+	EditDepartment(ctx context.Context, id int, dto domain.DepartmentRequest) error
 }
 
 var EmployeesNotFound = errors.New("employees in this department not found")
@@ -197,12 +195,12 @@ func (s *service) DeleteDepartment(ctx context.Context, id int) error {
 	return s.repository.DeleteDepartment(ctx, id)
 }
 
-func (s *service) EditDepartment(ctx context.Context, id int, dto domain.DepartmentRequest, requestInfo network.RequestInfo) error {
-	//TODO implement me
-	panic("implement me")
-}
+func (s *service) EditDepartment(ctx context.Context, id int, dto domain.DepartmentRequest) error {
+	_, err := s.repository.GetDepartment(ctx, id)
 
-func (s *service) GetEmployees(ctx context.Context, companyId int) error {
-	//TODO implement me
-	panic("implement me")
+	if err != nil {
+		return err
+	}
+
+	return s.repository.EditDepartment(ctx, id, dto)
 }

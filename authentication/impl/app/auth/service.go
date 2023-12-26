@@ -21,6 +21,7 @@ type Service interface {
 	Logout(ctx context.Context, token string) error
 	CreateUser(ctx context.Context, email string) error
 	GetUserByEmail(ctx context.Context, email string) (int, error)
+	GetCompanyByUserID(ctx context.Context, id int) (int, error)
 }
 
 func NewService(repository Repository, tokenService token.Service) Service {
@@ -30,6 +31,10 @@ func NewService(repository Repository, tokenService token.Service) Service {
 type service struct {
 	repository   Repository
 	tokenService token.Service
+}
+
+func (s *service) GetCompanyByUserID(ctx context.Context, id int) (int, error) {
+	return s.repository.GetCompanyByUserID(ctx, id)
 }
 
 func (s *service) CreateUser(ctx context.Context, email string) error {

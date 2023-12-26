@@ -8,4 +8,5 @@ type Repository interface {
 	GetUserIDByEmail(ctx context.Context, email string) (int, error)
 	CreateUser(ctx context.Context, email string) error
 	GetUserByEmail(ctx context.Context, email string) (int, error)
+	GetCompanyByUserID(ctx context.Context, id int) (int, error)
 }

@@ -2,6 +2,7 @@ package sql
 
 import (
 	"context"
+	"errors"
 	"github.com/jackc/pgx/v5"
 	"portal_back/authentication/impl/app/auth"
 )
@@ -12,6 +13,31 @@ func NewAuthRepository(conn *pgx.Conn) auth.Repository {
 
 type repository struct {
 	conn *pgx.Conn
+}
+
+func (r *repository) GetCompanyByUserID(ctx context.Context, id int) (int, error) {
+	query := `
+		SELECT MIN(company.id)
+	FROM public.company
+	JOIN employeeaccount ON employeeaccount.companyid=company.id
+	JOIN auth_user ON employeeaccount.userid= auth_user.id
+	WHERE auth_user.id = $1
+	GROUP BY auth_user.id
+	`
+
+	var companyID int
+	err := r.conn.QueryRow(ctx, query, id).Scan(&companyID)
+
+	//TODO: remove
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 1, nil
+	}
+
+	if err != nil {
+		return 0, err
+	}
+
+	return companyID, nil
 }
 
 func (r *repository) CreateUser(ctx context.Context, email string) error {

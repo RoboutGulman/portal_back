@@ -20,8 +20,7 @@ type employeeAccountRepository struct {
 func (r employeeAccountRepository) DeleteEmployeeFromDepartment(ctx context.Context, id int, departmentID int) error {
 	query := `
 		DELETE FROM employee_department
-		WHERE id=$1
-		WHERE accountid = $1 ANDdepartmentid = $2
+		WHERE accountid = $1 AND departmentid = $2
 	`
 	_, err := r.conn.Exec(ctx, query, id, departmentID)
 	return err
@@ -99,8 +98,7 @@ func (r employeeAccountRepository) GetDepartmentEmployees(ctx context.Context, d
 	for rows.Next() {
 		var departmentEmployee domain.Employee
 		err := rows.Scan(&departmentEmployee.Id, &departmentEmployee.FirstName, &departmentEmployee.SecondName,
-			&departmentEmployee.Surname, &departmentEmployee.DateOfBirth, &departmentEmployee.Email,
-			&departmentEmployee.Icon, &departmentEmployee.TelephoneNumber)
+			&departmentEmployee.Surname, &departmentEmployee.DateOfBirth, &departmentEmployee.Email)
 		if err != nil {
 			return departmentEmployees, err
 		}
@@ -191,6 +189,7 @@ func (r employeeAccountRepository) GetCompanyEmployee(ctx context.Context, userI
 		LEFT JOIN auth_user ON employeeaccount.userid=auth_user.id
         WHERE employeeaccount.id=$1 AND employeeaccount.companyid=$2
 	`
+
 	err = r.conn.QueryRow(ctx, query, userId, companyId).Scan(&employee.Id, &employee.FirstName,
 		&employee.SecondName, &employee.Surname,
 		&employee.DateOfBirth, &employee.TelephoneNumber,
@@ -206,7 +205,7 @@ func (r employeeAccountRepository) GetCompanyEmployee(ctx context.Context, userI
 		FROM department
 		RIGHT JOIN employee_department ON employee_department.departmentid=department.id
 		RIGHT JOIN employeeaccount ON employeeaccount.id=employee_department.accountid
-		WHERE employeeaccount.id=&1 AND department.companyid=$2
+		WHERE employeeaccount.id=$1 AND department.companyid=$2
 	`
 	rows, err = r.conn.Query(ctx, query, userId, companyId)
 	for rows.Next() {
@@ -220,11 +219,11 @@ func (r employeeAccountRepository) GetCompanyEmployee(ctx context.Context, userI
 	query = `
 		SELECT role.id, role.title
 		FROM role
-		RIGHT JOIN employee_roles ON employee_roles.roleid=role.id
-		RIGHT JOIN employeeaccount ON employeeaccount.id=employee_roles.accountid
+		JOIN employee_roles ON employee_roles.roleid=role.id
+		JOIN employeeaccount ON employeeaccount.id=employee_roles.accountid
 		WHERE employeeaccount.id=$1 AND employeeaccount.companyid=$2
 	`
-	rows, err = r.conn.Query(ctx, query, userId, companyId)
+	rows, err = r.conn.Query(ctx, query, employee.Id, companyId)
 	for rows.Next() {
 		var roleInfo domain.RoleInfo
 		err = rows.Scan(roleInfo.Id, roleInfo.Name)
@@ -248,8 +247,8 @@ func (r employeeAccountRepository) DeleteEmployee(ctx context.Context, id int) e
 func (r employeeAccountRepository) EditEmployee(ctx context.Context, id int, dto domain.EmployeeRequest) error {
 	query := `
 		UPDATE employeeaccount
-		SET firstname=$2, secondname=$3, surname=$4,
-		    telephonenumber=$5, avatarurl=$6, dateofbirth=$7,
+		SET (firstname, secondname, surname,
+		    telephonenumber, avatarurl, dateofbirth) =($2, $3, $4, $5,$6, $7 )
 		WHERE id=$1
 	`
 	_, err := r.conn.Exec(ctx, query, id, dto.FirstName, dto.SecondName, dto.Surname, dto.TelephoneNumber, dto.Icon, dto.DateOfBirth)
